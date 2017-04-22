@@ -1,1 +1,0 @@
-cmd_/home/ubuntu/rootkits/cns-rootkit/src/cns-rootkit.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/ubuntu/rootkits/cns-rootkit/src/cns-rootkit.ko /home/ubuntu/rootkits/cns-rootkit/src/cns-rootkit.o /home/ubuntu/rootkits/cns-rootkit/src/cns-rootkit.mod.o
