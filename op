@@ -1,0 +1,7 @@
+make -C /lib/modules/4.4.0-62-generic/build M=/home/ubuntu/rootkits/cns-rootkit modules
+make[1]: Entering directory '/usr/src/linux-headers-4.4.0-62-generic'
+  CC [M]  /home/ubuntu/rootkits/cns-rootkit/src/cns-rootkit.o
+scripts/Makefile.build:264: recipe for target '/home/ubuntu/rootkits/cns-rootkit/src/cns-rootkit.o' failed
+Makefile:1420: recipe for target '_module_/home/ubuntu/rootkits/cns-rootkit' failed
+make[1]: Leaving directory '/usr/src/linux-headers-4.4.0-62-generic'
+Makefile:6: recipe for target 'all' failed
